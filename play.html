@@ -1,0 +1,26 @@
+<html>
+  <head>
+    <script src="jquery.js"></script>
+    <script src="Bacon.js"></script>
+    <script src="coffee-script.js"></script>
+    <script type="text/coffeescript">
+    $ ->
+      plus = $("#plus").asEventStream("click")
+      minus = $("#minus").asEventStream("click")
+      both = plus.merge(minus).map(->
+        console.log arguments
+        "superwolf"
+      )
+      both.onValue (data)->
+        console.log data
+        console.log arguments
+    </script>
+    
+  </head>
+  <body>
+    <h1>bacon.js example page</h1>
+    <input id="plus" >
+    <input id ="minus">
+    <button id="send">SEND</button>
+  </body>
+</html>

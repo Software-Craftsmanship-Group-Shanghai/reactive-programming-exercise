@@ -2,27 +2,50 @@
   <head>
     <script src="jquery.js"></script>
     <script src="Bacon.js"></script>
-    <script>
-      $(function() {
+    <script src="coffee-script.js"></script>
+    <script type="text/coffeescript">
+    $ ->
+      to = $("#to").asEventStream("keyup").toProperty()
+      message = $("#message").asEventStream("keyup").toProperty()
 
-        //create a stream of characters from the to & message input fields        
-        var to = $("#to").asEventStream("keyup").map(function(event) { return $(event.target).val();});
-        var message = $("#message").asEventStream("keyup").map(function(event) { return $(event.target).val();});
- 
-        //create a function that will take a string and convert it into an event stream with the first event call START
-        var toAddresses = function(a) { var arr = a.split(" "); arr.unshift("START"); return Bacon.fromArray(arr);};
-        //map the to stream into a new stream per event. Using the toAddresses function this will create a new stream
-        //of addresses for each event in the to input field
-        var addressStream = to.flatMap(toAddresses);
-        
-        //Let's go backwards ;) scan takes an accumulator function which is called once per event in a stream
-        //Here I'm resetting the accumulator if there is a "START" event
-        var validAddresses = addressStream.scan("",function(a,b) {if(b == "START") {return "";}; return a + ":" + b});
-        
-        //This binds to the text of a DOM element
-        //As you enter content and separate it by a space the output section will show a ":" separated list of email addresses
-        validAddresses.assign($("#output"),'text');
-      })
+      both = to.and(message).map((event)->
+        value = $(event.target).val()
+        value is "" or not value
+      )
+
+      both.assign($('#send'), 'prop', 'disabled')
+      
+    </script>
+    <script>
+    $(function(){
+      var $price, $total, $quantity;
+      var id = function(event) {
+        return $(event.target).val();
+      }
+
+
+      $price = $("#price").asEventStream("keyup").map(id)
+      $quantity = $("#quantity").asEventStream("keyup").map(id)
+      $total = $("#total").asEventStream("keyup").map(id)
+
+      var quantity = $quantity.toProperty(0);
+
+      var price = Bacon.when(
+        [$price], function(value){return value},
+        [$total, quantity], function(x,y) { return x/y })
+       .toProperty(0)  
+
+      var total = Bacon.when(
+        [$total], function(value){return value},
+        [$price, quantity], function(x,y) { return x*y},
+        [price, $quantity], function(x,y) { return x*y})
+       .toProperty(0)
+
+       price.assign($('#price'), 'val')
+       quantity.assign($('#quantity'), 'val')
+       total.assign($('#total'), 'val')
+
+    })  
     </script>
   </head>
   <body>
@@ -31,6 +54,12 @@
     Message: <input type="text" id="message"><br>
     Errors: <div id="errors"></div><br>
     Network: <div id="output"></div><br>
-    <button id="send">SEND</button>
+    <button id="send" disabled="disabled">SEND</button>
+
+    <div>
+      <input id="price">
+      <input id="quantity">
+      <input id="total">
+    </div>
   </body>
 </html>
